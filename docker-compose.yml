@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-lab
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: lab
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  streamlit:
+    build: ./app
+    container_name: streamlit-lab
+    ports:
+      - "8501:8501"
+    environment:
+      DB_HOST: mysql
+      DB_USER: user
+      DB_PASSWORD: pass
+      DB_NAME: lab
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    command: streamlit run LAB.py --server.headless true --server.port 8501
+
+volumes:
+  mysql_data:
